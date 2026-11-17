@@ -1,0 +1,17 @@
+# 本地环境、密钥与运行数据不进入仓库。
+.env
+.env.*
+!.env.example
+wp-config.php
+*-credentials.json
+*.key
+*.pem
+*.log
+*.sql
+*.sqlite*
+__pycache__/
+.DS_Store
+Thumbs.db
+/work/
+/vendor/
+/node_modules/
