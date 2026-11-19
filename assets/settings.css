@@ -1,0 +1,38 @@
+.ls-settings{max-width:1040px;margin:18px 0 40px;color:#1d2327}
+.ls-settings-intro{color:#50575e;margin:0 0 12px}
+.ls-section{margin:0 0 10px;border:1px solid #c3c4c7;border-radius:4px;background:#fff}
+.ls-section>summary{padding:14px 18px;cursor:pointer;min-height:24px;line-height:24px}
+.ls-section>summary::marker{color:#646970}
+.ls-section-title{font-size:14px;font-weight:600;margin-left:4px}
+.ls-section-status{float:right;margin-left:16px;color:#646970;font-size:12px;font-weight:400}
+.ls-section[open]>summary{border-bottom:1px solid #dcdcde;background:#f6f7f7}
+.ls-section-body{padding:20px}
+.ls-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 28px}
+.ls-wide{grid-column:1/-1;min-width:0}
+.ls-field{min-width:0}
+.ls-field>label,.ls-field-label,.ls-checks legend{display:block;font-weight:600;margin:0 0 7px}
+.ls-field select,.ls-field input[type=number],.ls-field textarea{width:100%;max-width:100%;margin:0}
+.ls-field select,.ls-field input[type=number]{min-height:36px}
+.ls-field textarea{resize:vertical;min-height:78px}
+.ls-field .description,.ls-wide .description{margin:6px 0 0;font-size:12px;color:#50575e}
+.ls-switch{display:inline-flex;align-items:center;gap:8px;min-height:32px;font-weight:500;cursor:pointer}
+.ls-switch input[type=checkbox]{margin:0}
+.ls-help{color:#50575e}
+.ls-help>summary{cursor:pointer;padding:8px 0;min-height:24px;line-height:24px;color:#2271b1}
+.ls-help p{margin:4px 0 0;line-height:1.8}
+.ls-checks{margin:0;padding:0;border:0}
+.ls-checks label{display:inline-flex;align-items:center;margin:4px 20px 4px 0;min-height:32px}
+.ls-rule-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+.ls-rule-list label{display:flex;align-items:flex-start;padding:10px;border:1px solid #dcdcde;border-radius:3px}
+.ls-rule-list input{flex-shrink:0;margin-top:2px}
+.ls-rule-list small{display:block;color:#646970;margin-top:4px}
+.ls-divider{border-top:1px solid #dcdcde;padding-top:14px}
+.ls-previews{display:flex;flex-wrap:wrap;gap:6px}
+.ls-savebar{position:sticky;bottom:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 18px;background:#fff;border:1px solid #c3c4c7;border-radius:4px;box-shadow:0 -2px 8px #00000008}
+.ls-savebar .button{min-height:36px}
+#ls-save-status{color:#50575e}
+.ls-settings.is-dirty #ls-save-status{color:#996800}
+.ls-settings summary:focus-visible{outline:2px solid #2271b1;outline-offset:2px}
+.ls-settings input,.ls-settings textarea,.ls-settings select{scroll-margin-top:70px;scroll-margin-bottom:90px}
+@media(max-width:782px){.ls-fields,.ls-rule-list{grid-template-columns:1fr}.ls-section>summary{padding:12px}.ls-section-status{float:none;display:block;margin:0 0 0 18px;line-height:20px}.ls-section-body{padding:16px}.ls-field select,.ls-field input[type=number],.ls-switch,.ls-checks label,.ls-help>summary,.ls-savebar .button{min-height:44px}.ls-savebar{padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){.ls-settings *{scroll-behavior:auto}}

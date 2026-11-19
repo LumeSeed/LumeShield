@@ -10,7 +10,7 @@ final class BlockPage
         if ($status === 429) return '请求频率超限';
         if ($status === 413) return '请求大小超限';
         if ($status === 400) return '请求格式异常';
-        $ids = ['deny_ip' => 'IP 黑名单拦截', 'deny_path' => '路径访问拦截', 'deny_ua' => '客户端访问拦截'];
+        $ids = ['auto_ban' => 'IP 临时封禁', 'deny_ip' => 'IP 黑名单拦截', 'deny_path' => '路径访问拦截', 'deny_ua' => '客户端访问拦截'];
         $categories = ['sqli' => 'SQL 注入拦截', 'xss' => '跨站脚本拦截', 'rce' => '代码执行拦截',
             'traversal' => '目录穿越拦截', 'probe' => '敏感路径拦截', 'scanner' => '扫描器访问拦截'];
         return $ids[$hit['id'] ?? ''] ?? $categories[$hit['category'] ?? ''] ?? '安全策略拦截';

@@ -11,6 +11,7 @@ global $wpdb;
 // 表名仅来自 WordPress 自己的前缀和固定后缀，不读取请求参数。
 $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'lumeseed_lumeshield_logs');
 $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'lumeseed_lumeshield_rates');
+$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'lumeseed_lumeshield_autobans');
 delete_option('lumeseed_lumeshield_settings');
 delete_option('lumeseed_lumeshield_db_version');
 delete_option('lumeseed_lumeshield_error');

@@ -5,6 +5,20 @@ defined('ABSPATH') || exit;
 
 final class Exceptions
 {
+    public static function fromLog(array $row): ?string
+    {
+        // 旧记录、脱敏路径和非顶层字段不推断成范围更大的通配例外。
+        $path = (string) ($row['exception_path'] ?? '');
+        $field = (string) ($row['field_name'] ?? '');
+        $rule = (string) ($row['rule_id'] ?? '');
+        if ($path === '') { return null; }
+        if (in_array($rule, ['sensitive_path', 'scanner_ua'], true)) { $field = '*'; }
+        elseif (!preg_match('~^(GET|POST|JSON|COOKIE)\[[A-Za-z_][A-Za-z0-9_-]{0,63}\]$~D', $field)) { return null; }
+        $line = ($row['method'] ?? '') . ' ' . $path . ' ' . $field . ' ' . $rule;
+        try { self::parse([$line]); return $line; }
+        catch (\InvalidArgumentException $e) { return null; }
+    }
+
     public static function parse($input): array
     {
         $lines = Settings::lines($input);

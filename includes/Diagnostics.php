@@ -33,8 +33,9 @@ final class Diagnostics
         // LIMIT 0 验证表和所需列可读取，不读取日志内容，也不假定可读就一定可写。
         $previous = $wpdb->suppress_errors(true);
         try {
-            foreach (['logs' => ['命中日志表', 'id,last_seen,ip,path,rule_id,action_name,hits'],
-                'rates' => ['请求计数表', 'bucket,hits,expires_at']] as $suffix => [$label, $columns]) {
+            foreach (['logs' => ['命中日志表', 'id,last_seen,ip,path,rule_id,action_name,hits,log_mode,request_uri,user_agent,payload,detail_truncated,exception_path'],
+                'rates' => ['请求计数表', 'bucket,hits,expires_at'],
+                'autobans' => ['自动封禁表', 'id,ip,window_start,window_seconds,hits,blocked_at,blocked_until,last_rule,expires_at']] as $suffix => [$label, $columns]) {
                 $result = $wpdb->query('SELECT ' . $columns . ' FROM ' . Storage::table($suffix) . ' LIMIT 0');
                 $rows[] = [$label, $result !== false ? '可读取' : '需处理', $result !== false
                     ? '所需字段可读取；本检查没有写入数据，不能证明写入权限正常。'

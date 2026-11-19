@@ -29,7 +29,7 @@ final class Plugin
 
     public static function links(array $links): array
     {
-        array_unshift($links, '<a href="' . esc_url(admin_url('options-general.php?page=lumeseed-lumeshield')) . '">防护设置</a>');
+        array_unshift($links, '<a href="' . esc_url(admin_url('admin.php?page=lumeseed-lumeshield')) . '">防护设置</a>');
         return $links;
     }
 
@@ -103,6 +103,10 @@ final class Plugin
         if (Ip::listed($ip, $s['ip_allow']) || Engine::pathListed($path, $s['path_allow'])) {
             return;
         }
+        if (AutoBan::active($ip, $s)) {
+            self::finish(Engine::hit('auto_ban', 'blacklist', 'IP', '频繁命中自动封禁'), $s, $ip, $method, $path, 403);
+            return;
+        }
         // 先限流再执行较贵的内容检测；观察模式同样计数，但不会阻断。
         if ($s['rate_enabled'] && $ip !== '') {
             $count = Storage::increment('访问:' . $ip, (int) $s['rate_window']);
@@ -153,7 +157,7 @@ final class Plugin
                 }
             }
             $items = $collector->collect(wp_unslash($_GET), wp_unslash($_POST), wp_unslash($_COOKIE), $uri, $raw, $type);
-            $hit = Engine::inspect($items, $s['categories'], $path, $ua, Engine::uaListed($ua, $s['ua_allow']), Exceptions::parse($s['exceptions']), $method);
+            $hit = Engine::inspect($items, $s['categories'], $path, $ua, Engine::uaListed($ua, $s['ua_allow']), Exceptions::parse($s['exceptions']), $method, $s['disabled_rules'], $s['log_mode'] === 'detailed');
             if ($hit) {
                 self::finish($hit, $s, $ip, $method, $path, 403);
             }
@@ -167,8 +171,20 @@ final class Plugin
     private static function finish(array $hit, array $s, string $ip, string $method, string $path, int $status): void
     {
         $observe = $s['mode'] === 'observe';
+        static $autoCounted = false;
+        if (!$autoCounted) {
+            $autoCounted = true;
+            // 独立于日志预算；封禁存储失败不影响当前规则的拦截决定。
+            try { AutoBan::record($hit, $ip, $s); }
+            catch (\Throwable $e) { Storage::error('自动封禁'); }
+        }
         // 日志故障不会取消已经确认的拦截决定。
         try {
+            if ($s['log_mode'] === 'detailed' && !isset($hit['payload'])) {
+                $hit['payload'] = $hit['id'] === 'deny_ua' ? (string) ($_SERVER['HTTP_USER_AGENT'] ?? '')
+                    : ($hit['id'] === 'deny_path' ? (string) ($_SERVER['REQUEST_URI'] ?? $path)
+                    : ($hit['id'] === 'deny_ip' ? $ip : $hit['name']));
+            }
             Storage::record($hit, $ip, $method, $path, $observe ? 'observe' : 'block');
         } catch (\Throwable $e) {
             Storage::error('日志存储');

@@ -2,7 +2,7 @@
 Tags: security, firewall, rate-limit
 Requires at least: 6.0
 Requires PHP: 8.0
-Stable tag: 1.2.0
+Stable tag: 1.4.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,8 +17,8 @@ WordPress 原生请求防护插件，作者 LumeSeed：https://github.com/LumeSe
 
 == Installation ==
 
-1. 后台“插件 → 安装新插件 → 上传插件”，选择安装 ZIP。
-2. 启用后打开“设置 → LumeShield 防护”。
+1. 后台“插件 → 安装新插件 → 上传插件”，选择 lumeshield-wordpress-1.4.1.zip；已有旧版时选择“使用上传的插件替换当前插件”，保留配置和历史日志。
+2. 启用后打开“左侧一级菜单 LumeShield 防护”。
 3. 先使用观察模式核对业务，再启用拦截模式。
 
 == Frequently Asked Questions ==
@@ -36,6 +36,18 @@ WordPress 原生请求防护插件，作者 LumeSeed：https://github.com/LumeSe
 默认保留。先在设置中开启“删除插件时同时删除策略与日志”，再停用并删除，才会清理数据库记录。
 
 == Changelog ==
+
+= 1.4.1 =
+配置页改为 7 组按需展开，精简说明并添加固定保存栏、未保存提醒和隐藏字段校验展开；保留全部原有策略配置。
+
+= 1.4.0 =
+新增可配置的频繁命中自动封禁：统计窗口、次数阈值和封禁时长；独立临时名单、到期解除及管理员手动解封。默认关闭。
+
+= 1.3.1 =
+修复重复安装时的类名冲突：已有副本加载时，拒绝另一份副本启用并给出覆盖升级提示。
+
+= 1.3.0 =
+一级菜单、概览、日志详情与筛选、单条规则控制、日志转精细例外、可选详细日志；窗口内重复命中累加次数并保留首次详情。
 
 = 1.2.0 =
 

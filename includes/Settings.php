@@ -14,8 +14,10 @@ final class Settings
             'enabled' => 1, 'mode' => 'observe', 'rate_enabled' => 1,
             'login_enabled' => 0, 'login_window' => 900, 'login_limit' => 5,
             'cf_enabled' => 0, 'exceptions' => [],
+            'autoban_enabled' => 0, 'autoban_window' => 300, 'autoban_threshold' => 20, 'autoban_duration' => 3600,
             'rate_window' => 60, 'rate_limit' => 120, 'body_limit' => 262144,
             'retention_days' => 7, 'max_logs' => 5000, 'delete_on_uninstall' => 0,
+            'log_mode' => 'redacted', 'log_window' => 300, 'disabled_rules' => [],
             'categories' => ['sqli', 'xss', 'rce', 'traversal', 'probe', 'scanner'],
             'trusted_proxies' => [], 'proxy_header' => 'HTTP_X_FORWARDED_FOR',
             'ip_deny' => [], 'ip_allow' => [], 'path_deny' => [], 'path_allow' => [],
@@ -56,7 +58,7 @@ final class Settings
     public static function validate(array $input): array
     {
         $out = self::defaults();
-        foreach (['enabled', 'rate_enabled', 'delete_on_uninstall', 'login_enabled', 'cf_enabled'] as $key) {
+        foreach (['enabled', 'rate_enabled', 'delete_on_uninstall', 'login_enabled', 'cf_enabled', 'autoban_enabled'] as $key) {
             $out[$key] = isset($input[$key]) && (string) $input[$key] === '1' ? 1 : 0;
         }
         if (!in_array($input['mode'] ?? '', ['observe', 'block'], true)) {
@@ -64,7 +66,8 @@ final class Settings
         }
         $out['mode'] = $input['mode'];
         foreach (['rate_window' => [5, 3600], 'rate_limit' => [10, 10000],
-            'body_limit' => [16384, 1048576], 'retention_days' => [1, 90], 'max_logs' => [100, 50000],
+            'body_limit' => [16384, 1048576], 'retention_days' => [1, 90], 'max_logs' => [100, 50000], 'log_window' => [5, 3600],
+            'autoban_window' => [60, 3600], 'autoban_threshold' => [3, 1000], 'autoban_duration' => [60, 604800],
             'login_window' => [60, 3600], 'login_limit' => [3, 100]] as $key => [$min, $max]) {
             $value = $input[$key] ?? $out[$key];
             if (!is_scalar($value) || !ctype_digit((string) $value) || (int) $value < $min || (int) $value > $max) {
@@ -77,6 +80,16 @@ final class Settings
             throw new \InvalidArgumentException('规则分类无效');
         }
         $out['categories'] = array_values(array_unique($categories));
+        $logMode = $input['log_mode'] ?? 'redacted';
+        if (!in_array($logMode, ['redacted', 'detailed'], true)) {
+            throw new \InvalidArgumentException('日志模式无效');
+        }
+        $out['log_mode'] = $logMode;
+        $disabled = self::lines($input['disabled_rules'] ?? []);
+        if (array_diff($disabled, array_merge(array_column(Engine::rules(), 0), ['scanner_ua']))) {
+            throw new \InvalidArgumentException('停用规则编号无效');
+        }
+        $out['disabled_rules'] = $disabled;
         foreach (['trusted_proxies', 'ip_deny', 'ip_allow', 'path_deny', 'path_allow', 'ua_deny', 'ua_allow'] as $key) {
             $out[$key] = self::lines($input[$key] ?? '');
             foreach ($out[$key] as $line) {

@@ -230,41 +230,56 @@ final class Engine
         return array_unique([$value, $decoded, $spaced ?? $decoded, $joined ?? $decoded]);
     }
 
-    public static function inspect(array $items, array $categories, string $path, string $ua, bool $uaExempt, array $exceptions = [], string $method = 'GET'): ?array
+    public static function inspect(array $items, array $categories, string $path, string $ua, bool $uaExempt, array $exceptions = [], string $method = 'GET', array $disabled = [], bool $capture = false): ?array
     {
         $rules = self::rules();
+        // 优先报告已解析的具体字段；URI/原始体仍在后面检查，覆盖重复键等情况。
+        // 这样日志可以生成精确字段例外，而不必豁免整个请求体。
+        $items = array_merge(array_values(array_filter($items, static fn($item) => $item['context'] === 'value')),
+            array_values(array_filter($items, static fn($item) => $item['context'] !== 'value')));
         // 在字段外层归一化，避免每条规则都重复解码同一内容。
         foreach ($items as $item) {
             $variants = self::variants($item['value']);
                 foreach ($rules as [$id, $category, $name, $pattern]) {
-                    if ($category === 'probe' || !in_array($category, $categories, true)) {
+                    if ($category === 'probe' || !in_array($category, $categories, true) || in_array($id, $disabled, true)) {
                         continue;
                     }
                     if ($exceptions && Exceptions::allows($exceptions, $method, $path, $item['field'], $id, $item['context'])) { continue; }
                     $masked = $exceptions ? Exceptions::mask($item, $exceptions, $method, $path, $id) : $item['value'];
                     foreach ($masked === $item['value'] ? $variants : self::variants($masked) as $value) {
-                    $matched = preg_match($pattern, $value);
+                    $matched = preg_match($pattern, $value, $matches, PREG_OFFSET_CAPTURE);
                     if ($matched === false) {
                         throw new \RuntimeException('规则匹配异常：' . $id);
                     }
                     if ($matched === 1) {
-                        return self::hit($id, $category, $item['field'], $name);
+                        $hit = self::hit($id, $category, $item['field'], $name);
+                        if ($capture) {
+                            // 只截取实际命中位置附近的归一化文本，不复制整个请求体。
+                            $start = max(0, $matches[0][1] - 128);
+                            $hit['payload'] = substr($value, $start, 4096);
+                            $hit['payload_truncated'] = $start > 0 || strlen($value) > $start + 4096;
+                        }
+                        return $hit;
                     }
                 }
             }
         }
-        if (in_array('probe', $categories, true) && !($exceptions && Exceptions::allows($exceptions, $method, $path, '路径', 'sensitive_path'))) {
+        if (in_array('probe', $categories, true) && !in_array('sensitive_path', $disabled, true) && !($exceptions && Exceptions::allows($exceptions, $method, $path, '路径', 'sensitive_path'))) {
             foreach (self::variants($path) as $value) {
                 if (preg_match($rules[15][3], $value) === 1) {
-                    return self::hit('sensitive_path', 'probe', '路径', '敏感文件探测');
+                    $hit = self::hit('sensitive_path', 'probe', '路径', '敏感文件探测');
+                    if ($capture) { $hit['payload'] = substr($value, 0, 4096); $hit['payload_truncated'] = strlen($value) > 4096; }
+                    return $hit;
                 }
             }
         }
         // 不拦截 curl、WordPress、支付回调等通用客户端标识。
-        if (!$uaExempt && in_array('scanner', $categories, true)
+        if (!$uaExempt && in_array('scanner', $categories, true) && !in_array('scanner_ua', $disabled, true)
             && !($exceptions && Exceptions::allows($exceptions, $method, $path, 'User-Agent', 'scanner_ua'))
             && preg_match('~\b(?:sqlmap|nikto|masscan|nuclei|dirbuster)\b~i', $ua)) {
-            return self::hit('scanner_ua', 'scanner', 'User-Agent', '扫描工具标识');
+            $hit = self::hit('scanner_ua', 'scanner', 'User-Agent', '扫描工具标识');
+            if ($capture) { $hit['payload'] = substr($ua, 0, 4096); $hit['payload_truncated'] = strlen($ua) > 4096; }
+            return $hit;
         }
         return null;
     }

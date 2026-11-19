@@ -34,8 +34,8 @@ final class Simulator
             else { $body = json_encode($data, JSON_THROW_ON_ERROR); $type = 'application/json'; }
             $items = (new Inputs((int) $s['body_limit']))->collect($get, $post, $cookies, $uri, $body, $type);
             $uaExempt = Engine::uaListed($ua, $s['ua_allow']);
-            $hit = Engine::inspect($items, $s['categories'], $path, $ua, $uaExempt, Exceptions::parse($s['exceptions']), $input['method']);
-            $exception = !$hit && (bool) Engine::inspect($items, $s['categories'], $path, $ua, $uaExempt);
+            $hit = Engine::inspect($items, $s['categories'], $path, $ua, $uaExempt, Exceptions::parse($s['exceptions']), $input['method'], $s['disabled_rules']);
+            $exception = !$hit && (bool) Engine::inspect($items, $s['categories'], $path, $ua, $uaExempt, [], $input['method'], $s['disabled_rules']);
         }
         $disabled = empty($s['enabled']) || (defined('LUMESHIELD_DISABLE') && LUMESHIELD_DISABLE);
         return ['decision' => $disabled ? '防护已关闭；以下仅为规则分析' : ($hit ? ($s['mode'] === 'block' ? '会拦截' : '只观察') : '未发现命中'),
@@ -65,7 +65,7 @@ final class Simulator
         if (!empty($managed['ranges'])) {
             echo '<details><summary>查看已保存的托管网段</summary><pre>' . esc_html(implode("\n", $managed['ranges'])) . '</pre></details>';
         }
-        echo '<hr><h2>策略试测</h2><p>使用当前已保存的名单、规则与精细例外。不会访问填写的路径，不保存测试内容，不写命中日志。试测不模拟登录失败次数、实时限流、代理链或管理员豁免，也不证明内容本身安全。</p>';
+        echo '<hr><h2>策略试测</h2><p>使用当前已保存的名单、规则与精细例外。不会访问填写的路径，不保存测试内容，不写命中日志。试测不模拟自动封禁、登录失败次数、实时限流、代理链或管理员豁免，也不证明内容本身安全。</p>';
         if ($result !== null) {
             echo '<div class="notice notice-info" role="status"><p>' . esc_html($result['error'] ?? $result['decision']) . '</p>';
             if (!empty($result['hit'])) {
@@ -76,7 +76,7 @@ final class Simulator
         }
         $defaults = ['method' => 'POST', 'path' => '/example', 'source' => 'JSON', 'field' => 'content', 'value' => '', 'ip' => '192.0.2.10', 'ua' => 'LumeShield-Simulator'];
         $sample = isset($_POST['ls_simulate']) && is_array($_POST['sample'] ?? null) ? wp_unslash($_POST['sample']) : [];
-        echo '<form method="post" action="' . esc_url(admin_url('options-general.php?page=lumeseed-lumeshield&tab=tools')) . '">';
+        echo '<form method="post" action="' . esc_url(admin_url('admin.php?page=lumeseed-lumeshield&tab=tools')) . '">';
         wp_nonce_field('lumeshield_simulate');
         echo '<input type="hidden" name="ls_simulate" value="1"><table class="form-table" role="presentation">';
         foreach (['method' => '请求方法', 'path' => '精确路径', 'source' => '字段来源', 'field' => '顶层字段名', 'ip' => '模拟来源 IP', 'ua' => 'User-Agent', 'value' => '测试内容'] as $key => $label) {
